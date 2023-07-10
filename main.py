@@ -18,8 +18,7 @@ class LayerActiveCollector:
         self.attn_sparsity_threshold = 0.05
         self.attn_sparsity = (0, 0)
 
-    @staticmethod
-    def get_head_summary(tensors, name=''):
+    def get_head_summary(self, tensors, name=''):
         tensor = tensors[0]
         assert isinstance(tensor, torch.Tensor)
         n_head = 32
@@ -28,8 +27,14 @@ class LayerActiveCollector:
 
         # debug
         plt.hist(tensor.flatten(), bins='auto')  # arguments are passed to np.histogram
+
+        num_small_value = int((tensor.flatten() < self.attn_sparsity_threshold).sum())
+        plt.title(
+            f'{name} < {self.attn_sparsity_threshold}:  {num_small_value} / {tensor.numel()} == {num_small_value / tensor.numel() :.2f}'
+        )
         plt.savefig(f'output/{name}.hist.png')
         plt.clf()
+        self.attn_sparsity = (self.attn_sparsity[0] + num_small_value, self.attn_sparsity[1] + tensor.numel())
 
         return norm_tensor
 
@@ -37,16 +42,6 @@ class LayerActiveCollector:
         attention_output = outputs[0]
         assert isinstance(attention_output, torch.Tensor)
         norm_output = attention_output.norm(dim=-1)
-        # debug
-        tensor = norm_output
-        plt.hist(tensor.flatten(), bins='auto')
-        num_small_value = int((tensor.flatten() < self.attn_sparsity_threshold).sum())
-        plt.title(
-            f'{name} < {self.attn_sparsity_threshold}:  {num_small_value} / {tensor.numel()} == {num_small_value / tensor.numel() :.2f}'
-        )
-        plt.savefig(f'output/{name}.attn.png')
-        plt.clf()
-        self.attn_sparsity = (self.attn_sparsity[0] + num_small_value, self.attn_sparsity[1] + tensor.numel())
         return norm_output
 
     @staticmethod
@@ -122,6 +117,7 @@ def main():
         show_grid(data[0].numpy(), name)
 
     print(f'overall gelu sparsity is {collector.gelu_sparsity[0] / collector.gelu_sparsity[1] :.2f} == {collector.gelu_sparsity}')
+    print(f'overall attn sparsity is {collector.attn_sparsity[0] / collector.attn_sparsity[1] :.2f} == {collector.attn_sparsity}')
     pass
 
 
