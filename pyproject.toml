@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "bloom-example"
+version = "0.1.0"
+description = ""
+authors = ["pl <0x00.pl@gmail.com>"]
+readme = "README.md"
+packages = [{include = "bloom_example"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+transformers = "^4.30.2"
+torch = "^2.0.1"
+
+
+[[tool.poetry.source]]
+name = "baidu"
+url = "https://mirror.baidu.com/pypi/simple"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
