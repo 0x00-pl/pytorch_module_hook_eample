@@ -3,22 +3,34 @@ from typing import Tuple, Any
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BloomTokenizerFast, BloomForCausalLM
-from transformers.models.bloom.modeling_bloom import BloomBlock, BloomMLP, BloomAttention
+from transformers.models.bloom.modeling_bloom import BloomMLP, BloomAttention
 
 
 class LayerActiveCollector:
     def __init__(self):
-        self.summary_dict = defaultdict(lambda: torch.tensor(0))
+        self.summary_dict = defaultdict(lambda: [])
 
     @staticmethod
-    def get_attention_summary(output):
-        assert isinstance(output, torch.Tensor)
-        return torch.tensor(1)
+    def get_head_summary(tensors):
+        tensor = tensors[0]
+        assert isinstance(tensor, torch.Tensor)
+        n_head = 32
+        head_tensor = tensor.reshape(tensor.shape[:-1], n_head, -1)
+        norm_tensor = head_tensor.norm(dim=-1)
+        return norm_tensor
 
     @staticmethod
-    def get_mlp_summary(output):
-        assert isinstance(output, torch.Tensor)
-        return torch.tensor(1)
+    def get_attention_summary(outputs):
+        attention_output = outputs[0]
+        assert isinstance(attention_output, torch.Tensor)
+        norm_output = attention_output.norm(dim=-1)
+        return norm_output
+
+    @staticmethod
+    def get_mlp_summary(mlp_output):
+        assert isinstance(mlp_output, torch.Tensor)
+        norm_output = mlp_output.norm(dim=-1)
+        return norm_output
 
     def tensor_info(self, tensor):
         if isinstance(tensor, torch.Tensor):
@@ -30,13 +42,15 @@ class LayerActiveCollector:
         else:
             return '??'
 
-    def get_hook(self, name):
+    def get_hook(self, name: str):
         def hook(module: torch.nn.Module, inputs: Tuple[Any], outputs):
             print(f'[hook]: {name} {self.tensor_info(inputs)} -> {self.tensor_info(outputs)}')
             if isinstance(module, BloomAttention):
-                self.summary_dict[name] += self.get_attention_summary(outputs)
+                self.summary_dict[name] += [self.get_attention_summary(outputs)]
             elif isinstance(module, BloomMLP):
-                self.summary_dict[name] += self.get_mlp_summary(outputs)
+                self.summary_dict[name] += [self.get_mlp_summary(outputs)]
+            elif name.endswith('attention_dropout'):
+                self.summary_dict[name] += [self.get_head_summary(inputs)]
 
         return hook
 
