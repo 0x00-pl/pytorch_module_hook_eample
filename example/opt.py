@@ -3,7 +3,7 @@ from typing import Any, Tuple
 import torch
 from transformers import OPTForCausalLM
 
-from torch_model_info_collector import runtime, tools
+from torch_model_info_collector import runtime
 from torch_model_info_collector.module_collector import ModuleCollector
 
 
@@ -17,7 +17,7 @@ class OptCollector(ModuleCollector):
         self.num_attention_heads = None
 
     def get_head_summary(self, tensor, n_head=40, name=''):
-        tensor = tensor.reshape((-1, tensor.shape[1], n_head, tensor.shape[2]/n_head))
+        tensor = tensor.reshape((-1, tensor.shape[1], n_head, tensor.shape[2] // n_head))
         tensor_trans = tensor.transpose(-2, -3)
         norm_tensor = tensor_trans.norm(dim=-1)
         # self.plt_hist(tensor, self.attn_sparsity_threshold, name + '.raw', output_dir='output/opt')
