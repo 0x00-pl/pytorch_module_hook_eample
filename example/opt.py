@@ -21,7 +21,7 @@ class OptCollector(ModuleCollector):
         self.plt_hist(tensor, self.attn_sparsity_threshold, name + '.raw', output_dir='output/opt')
         attn_sparsity = self.plt_hist(norm_tensor, self.attn_sparsity_threshold, name, output_dir='output/opt')
         self.attn_sparsity = tuple(sum(i) for i in zip(self.attn_sparsity, attn_sparsity))
-        self.plt_grid(norm_tensor, name, output_dir='output/opt')
+        self.plt_grid(norm_tensor[0], name, output_dir='output/opt')
 
     def get_gelu_summary(self, tensor: torch.Tensor, name=''):
         assert isinstance(tensor, torch.Tensor)
