@@ -41,8 +41,8 @@ class OptCollector(ModuleCollector):
         return hook
 
     def register_hook(self, model):
-        super().register_hook(model)
         self.num_hidden_layers = model.config.num_hidden_layers
+        super().register_hook(model)
 
 
 def main():
