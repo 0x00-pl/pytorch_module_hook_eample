@@ -10,9 +10,9 @@ class BloomCollector(ModuleCollector):
     def __init__(self):
         super().__init__()
         self.gelu_sparsity_threshold = 0.05
-        self.gelu_sparsity = (0, 0)
+        self.gelu_sparsity = [0, 0]
         self.attn_sparsity_threshold = 0.05
-        self.attn_sparsity = (0, 0)
+        self.attn_sparsity = [0, 0]
         self.n_head = None
 
     def get_head_summary(self, tensors, n_head=32, name=''):

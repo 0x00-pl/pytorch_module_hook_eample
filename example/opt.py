@@ -11,9 +11,9 @@ class OptCollector(ModuleCollector):
     def __init__(self):
         super().__init__()
         self.gelu_sparsity_threshold = 0.001
-        self.gelu_sparsity = (0, 0)
+        self.gelu_sparsity = [0, 0]
         self.attn_sparsity_threshold = 0.1
-        self.attn_sparsity = (0, 0)
+        self.attn_sparsity = [0, 0]
         self.num_attention_heads = None
 
     def get_head_summary(self, tensor, n_head=None, name=''):
@@ -27,10 +27,10 @@ class OptCollector(ModuleCollector):
             name = name + '.raw'
 
         tensor_data_info = self.tensor_data_info(tensor, name, self.attn_sparsity_threshold)
-        self.plt_hist(
-            tensor.abs(), name,
-            title=tensor_data_info['fmt'], output_dir='output/opt'
-        )
+        # self.plt_hist(
+        #     tensor.abs(), name,
+        #     title=tensor_data_info['fmt'], output_dir='output/opt'
+        # )
         self.attn_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.attn_sparsity, tensor_data_info)
 
     def get_gelu_summary(self, tensor: torch.Tensor, name=''):
