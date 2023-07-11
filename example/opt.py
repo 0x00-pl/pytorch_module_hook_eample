@@ -14,7 +14,7 @@ class OptCollector(ModuleCollector):
         self.gelu_sparsity = (0, 0)
         self.attn_sparsity_threshold = 0.3
         self.attn_sparsity = (0, 0)
-        self.num_hidden_layers = None
+        self.num_attention_heads = None
 
     def get_head_summary(self, tensors, n_head=32, name=''):
         norm_tensor = tools.torch_split_heads_and_normal(tensors[0], n_head)
@@ -29,26 +29,26 @@ class OptCollector(ModuleCollector):
         self.gelu_sparsity = tuple(sum(i) for i in zip(self.gelu_sparsity, gelu_sparsity))
 
     def get_hook(self, name: str):
-        assert self.num_hidden_layers is not None
+        assert self.num_attention_heads is not None
         super_hook = super().get_hook(name)
 
         def hook(module: torch.nn.Module, inputs: Tuple[Any], outputs):
             super_hook(module, inputs, outputs)
             if name.endswith('.self_attn.out_proj'):
-                self.get_head_summary(inputs, self.num_hidden_layers, name)
+                self.get_head_summary(inputs, self.num_attention_heads, name)
             elif name.endswith('.self_attn.q_proj'):
-                self.get_head_summary(outputs, self.num_hidden_layers, name)
+                self.get_head_summary(outputs, self.num_attention_heads, name)
             elif name.endswith('.self_attn.k_proj'):
-                self.get_head_summary(outputs, self.num_hidden_layers, name)
+                self.get_head_summary(outputs, self.num_attention_heads, name)
             elif name.endswith('.self_attn.v_proj'):
-                self.get_head_summary(outputs, self.num_hidden_layers, name)
+                self.get_head_summary(outputs, self.num_attention_heads, name)
             elif name.endswith('.activation_fn'):
                 self.get_gelu_summary(outputs, name)
 
         return hook
 
     def register_hook(self, model):
-        self.num_hidden_layers = model.config.num_hidden_layers
+        self.num_attention_heads = model.config.num_attention_heads
         super().register_hook(model)
 
 
