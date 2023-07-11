@@ -6,7 +6,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BloomForCausalLM, 
 from rotch_model_info_collector.module_collector import ModuleCollector
 
 
-class BloomCollector(ModuleCollector):
+class OptCollector(ModuleCollector):
     def __init__(self):
         super().__init__()
         self.gelu_sparsity_threshold = 0.05
@@ -63,7 +63,7 @@ def main():
     model_name = 'facebook/opt-13b'
     tokenizer: BloomTokenizerFast = AutoTokenizer.from_pretrained(model_name)
     model: BloomForCausalLM = AutoModelForCausalLM.from_pretrained(model_name)
-    collector = BloomCollector()
+    collector = OptCollector()
     collector.register_hook(model)
 
     text = "This fruit shipping company provide different vehicle options like car and"
