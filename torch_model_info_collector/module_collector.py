@@ -10,7 +10,9 @@ class ModuleCollector:
         pass
 
     def tensor_info(self, tensor):
-        if isinstance(tensor, torch.Tensor):
+        if tensor is None:
+            return None
+        elif isinstance(tensor, torch.Tensor):
             return list(tensor.shape)
         elif isinstance(tensor, tuple):
             return tuple(self.tensor_info(i) for i in tensor)
