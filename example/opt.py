@@ -16,12 +16,12 @@ class OptCollector(ModuleCollector):
         self.attn_sparsity = (0, 0)
         self.num_attention_heads = None
 
-    def get_head_summary(self, tensors, n_head=32, name=''):
-        norm_tensor = tools.torch_split_heads_and_normal(tensors[0], n_head)
-        self.plt_hist(tensors[0], self.attn_sparsity_threshold, name + '.raw', output_dir='output/opt')
+    def get_head_summary(self, tensor, n_head=32, name=''):
+        norm_tensor = tools.torch_split_heads_and_normal(tensor, n_head)
+        self.plt_hist(tensor, self.attn_sparsity_threshold, name + '.raw', output_dir='output/opt')
         attn_sparsity = self.plt_hist(norm_tensor, self.attn_sparsity_threshold, name, output_dir='output/opt')
         self.attn_sparsity = tuple(sum(i) for i in zip(self.attn_sparsity, attn_sparsity))
-        self.plt_grid(norm_tensor[0], name, output_dir='output/opt')
+        self.plt_grid(norm_tensor, name, output_dir='output/opt')
 
     def get_gelu_summary(self, tensor: torch.Tensor, name=''):
         assert isinstance(tensor, torch.Tensor)
