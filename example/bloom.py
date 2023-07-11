@@ -2,7 +2,7 @@ from typing import Any, Tuple
 
 import torch
 
-from rotch_model_info_collector import runtime
+from rotch_model_info_collector import runtime, tools
 from rotch_model_info_collector.module_collector import ModuleCollector
 
 
@@ -16,11 +16,7 @@ class BloomCollector(ModuleCollector):
         self.n_layers = None
 
     def get_head_summary(self, tensors, n_head=32, name=''):
-        tensor = tensors[0]
-        assert isinstance(tensor, torch.Tensor)
-        head_tensor = torch.reshape(tensor, (*tensor.shape[:-1], n_head, -1))
-        norm_tensor = head_tensor.norm(dim=-1)
-
+        norm_tensor = tools.torch_split_heads_and_normal(tensors[0], n_head)
         attn_sparsity = self.plt_hist(norm_tensor, self.attn_sparsity_threshold, name)
         self.attn_sparsity = (sum(i) for i in zip(self.attn_sparsity, attn_sparsity))
 
