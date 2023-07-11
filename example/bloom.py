@@ -27,6 +27,7 @@ class BloomCollector(ModuleCollector):
         self.gelu_sparsity = (sum(i) for i in zip(self.gelu_sparsity, gelu_sparsity))
 
     def get_hook(self, name: str):
+        assert self.n_layers is not None
         super_hook = super().get_hook(name)
 
         def hook(module: torch.nn.Module, inputs: Tuple[Any], outputs):
