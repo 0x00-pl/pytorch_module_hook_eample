@@ -3,8 +3,8 @@ from typing import Any, Tuple
 import torch
 from transformers import OPTForCausalLM
 
-from rotch_model_info_collector import runtime, tools
-from rotch_model_info_collector.module_collector import ModuleCollector
+from torch_model_info_collector import runtime, tools
+from torch_model_info_collector.module_collector import ModuleCollector
 
 
 class OptCollector(ModuleCollector):
