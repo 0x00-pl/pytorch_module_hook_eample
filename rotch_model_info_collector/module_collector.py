@@ -53,32 +53,3 @@ class ModuleCollector:
         # plt.show()
         plt.savefig(os.path.join(output_dir, f'{output_name}.grid.png'))
         plt.clf()
-
-def main():
-    tokenizer: BloomTokenizerFast = AutoTokenizer.from_pretrained("bigscience/bloom-7b1")
-    model: BloomForCausalLM = AutoModelForCausalLM.from_pretrained("bigscience/bloom-7b1", n_layer=30)  # n_layer=30
-    collector = LayerActiveCollector()
-
-    for name, module in model.named_modules():
-        module: torch.nn.Module
-        module.register_forward_hook(collector.get_hook(name))
-
-    text = "This fruit shipping company provide different vehicle options like car and"
-    inputs = tokenizer(text, return_tensors="pt")
-    outputs = model.generate(**inputs, labels=inputs["input_ids"], max_length=1)
-
-    output_text = tokenizer.decode(outputs[0], clean_up_tokenization_spaces=True, add_special_tokens=False)
-    print(output_text)
-    # print(collector.summary_dict.items())
-    for layer_idx in range(model.config.n_layer):
-        name = f'transformer.h.{layer_idx}.self_attention.dense'
-        data = collector.summary_dict[name][0]
-        show_grid(data[0].numpy(), name)
-
-    print(f'overall gelu sparsity is {collector.gelu_sparsity[0] / collector.gelu_sparsity[1] :.2f} == {collector.gelu_sparsity}')
-    print(f'overall attn sparsity is {collector.attn_sparsity[0] / collector.attn_sparsity[1] :.2f} == {collector.attn_sparsity}')
-    pass
-
-
-if __name__ == '__main__':
-    main()

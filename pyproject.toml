@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["pl <0x00.pl@gmail.com>"]
 readme = "README.md"
-packages = [{include = "torch_model_info_collector"}]
+packages = [{ include = "torch_model_info_collector" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
