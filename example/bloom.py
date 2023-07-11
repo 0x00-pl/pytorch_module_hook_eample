@@ -17,14 +17,24 @@ class BloomCollector(ModuleCollector):
 
     def get_head_summary(self, tensors, n_head=32, name=''):
         norm_tensor = tools.torch_split_heads_and_normal(tensors[0], n_head)
-        attn_sparsity = self.plt_hist(norm_tensor, self.attn_sparsity_threshold, name, output_dir='output/bloom')
-        self.attn_sparsity = tuple(sum(i) for i in zip(self.attn_sparsity, attn_sparsity))
+
+        tensor_data_info = self.tensor_data_info(norm_tensor, name, self.attn_sparsity_threshold)
+        self.plt_hist(
+            norm_tensor, name,
+            title=self.tensor_data_info(norm_tensor, name, self.attn_sparsity_threshold), output_dir='output/bloom'
+        )
+        self.attn_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.attn_sparsity, tensor_data_info)
+
         self.plt_grid(norm_tensor[0].transpose(), name, output_dir='output/bloom')
 
     def get_gelu_summary(self, tensor: torch.Tensor, name=''):
         assert isinstance(tensor, torch.Tensor)
-        gelu_sparsity = self.plt_hist(tensor, self.gelu_sparsity_threshold, name, output_dir='output/bloom')
-        self.gelu_sparsity = tuple(sum(i) for i in zip(self.gelu_sparsity, gelu_sparsity))
+        tensor_data_info = self.tensor_data_info(tensor, name, self.gelu_sparsity_threshold)
+        self.plt_hist(
+            tensor, name, title=self.tensor_data_info(tensor, name,
+                                                      self.gelu_sparsity_threshold), output_dir='output/bloom'
+        )
+        self.gelu_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.gelu_sparsity, tensor_data_info)
 
     def get_hook(self, name: str):
         assert self.n_head is not None

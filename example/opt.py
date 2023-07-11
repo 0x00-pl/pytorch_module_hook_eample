@@ -12,27 +12,37 @@ class OptCollector(ModuleCollector):
         super().__init__()
         self.gelu_sparsity_threshold = 0.001
         self.gelu_sparsity = (0, 0)
-        self.attn_sparsity_threshold = 0.3
+        self.attn_sparsity_threshold = 0.1
         self.attn_sparsity = (0, 0)
         self.num_attention_heads = None
 
     def get_head_summary(self, tensor, n_head=None, name=''):
         if n_head is not None:
             tensor = tensor.reshape((-1, tensor.shape[1], n_head, tensor.shape[2] // n_head))
-            tensor_trans = tensor.transpose(-2, -3)
-            norm_tensor = tensor_trans.norm(dim=-1)
-            self.plt_grid(norm_tensor[0], name, output_dir='output/opt')
-            tensor = norm_tensor
+            tensor_sum_in_pos = torch.sum(tensor.abs() > self.attn_sparsity_threshold, dim=-3)
+            # tensor_trans = norm_tensor.transpose(-1, -2)
+            # tensor_trans = tensor_trans.sum(dim=-1)
+            self.plt_grid(tensor_sum_in_pos[0], name, output_dir='output/opt')
         else:
             name = name + '.raw'
 
-        attn_sparsity = self.plt_hist(tensor, self.attn_sparsity_threshold, name, output_dir='output/opt')
-        self.attn_sparsity = tuple(sum(i) for i in zip(self.attn_sparsity, attn_sparsity))
+        tensor_data_info = self.tensor_data_info(tensor, name, self.attn_sparsity_threshold)
+        self.plt_hist(
+            tensor.abs(), name,
+            title=tensor_data_info['fmt'], output_dir='output/opt'
+        )
+        self.attn_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.attn_sparsity, tensor_data_info)
 
     def get_gelu_summary(self, tensor: torch.Tensor, name=''):
         assert isinstance(tensor, torch.Tensor)
-        gelu_sparsity = self.plt_hist(tensor, self.gelu_sparsity_threshold, name, output_dir='output/opt')
-        self.gelu_sparsity = tuple(sum(i) for i in zip(self.gelu_sparsity, gelu_sparsity))
+        tensor_count = torch.sum(tensor != 0, dim=0)
+
+        tensor_data_info = self.tensor_data_info(tensor, name, self.gelu_sparsity_threshold)
+        self.plt_hist(
+            tensor_count, name,
+            title=tensor_data_info['fmt'], output_dir='output/opt'
+        )
+        self.gelu_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.gelu_sparsity, tensor_data_info)
 
     def get_hook(self, name: str):
         assert self.num_attention_heads is not None
@@ -41,7 +51,7 @@ class OptCollector(ModuleCollector):
         def hook(module: torch.nn.Module, inputs: Tuple[Any], output):
             super_hook(module, inputs, output)
             if name.endswith('.self_attn.out_proj'):
-                self.get_head_summary(inputs[0], None, name)
+                self.get_head_summary(inputs[0], self.num_attention_heads, name)
             # elif name.endswith('.self_attn.q_proj'):
             #     self.get_head_summary(output, None, name)
             # elif name.endswith('.self_attn.k_proj'):

@@ -34,18 +34,33 @@ class ModuleCollector:
             module.register_forward_hook(self.get_hook(name))
 
     @staticmethod
-    def plt_hist(tensor: torch.Tensor, threshold, output_name, output_dir='output'):
-        plt.hist(tensor.flatten(), bins='auto')
+    def tensor_data_info(tensor, output_name, threshold):
         num_small_value = int(torch.sum(torch.lt(tensor, threshold)))
         num_total = tensor.numel()
-        plt.title(
-            f'{output_name} < {threshold}: '
-            f'{num_small_value} / {num_total} == {num_small_value / num_total :.2f}'
-        )
+        return {
+            'count': num_small_value,
+            'total': num_total,
+            'fmt': f'{output_name} < {threshold}: '
+                   f'{num_small_value} / {num_total} == {num_small_value / num_total :.2f}'
+        }
+
+    @staticmethod
+    def update_attn_sparsity_from_tensor_data_info(sparsity, tensor_data_info):
+        sparsity[0] += tensor_data_info['count']
+        sparsity[1] += tensor_data_info['total']
+        return sparsity
+
+    @staticmethod
+    def plt_hist(tensor: torch.Tensor, output_name, title=None, output_dir='output'):
+        if title is None:
+            title = output_name
+
+        plt.title(title)
+        plt.hist(tensor.flatten(), bins=100, log=True)
+        # plt.ylim(0, 100)
         os.makedirs(output_dir, exist_ok=True)
         plt.savefig(os.path.join(output_dir, f'{output_name}.hist.png'))
         plt.clf()
-        return num_small_value, num_total
 
     @staticmethod
     def plt_grid(data, output_name, output_dir='output'):
