@@ -40,6 +40,7 @@ class ModuleCollector:
             f'{output_name} < {threshold}: '
             f'{num_small_value} / {num_total} == {num_small_value / num_total :.2f}'
         )
+        os.makedirs(output_dir, exist_ok=True)
         plt.savefig(os.path.join(output_dir, f'{output_name}.hist.png'))
         plt.clf()
         return num_small_value, num_total
@@ -51,5 +52,6 @@ class ModuleCollector:
         plt.title(output_name)
         plt.xticks(range(data.shape[-2]), [f'item{i}' for i in range(data.shape[-2])])
         # plt.show()
+        os.makedirs(output_dir, exist_ok=True)
         plt.savefig(os.path.join(output_dir, f'{output_name}.grid.png'))
         plt.clf()

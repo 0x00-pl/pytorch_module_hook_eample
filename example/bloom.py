@@ -13,7 +13,7 @@ class BloomCollector(ModuleCollector):
         self.gelu_sparsity = (0, 0)
         self.attn_sparsity_threshold = 0.05
         self.attn_sparsity = (0, 0)
-        self.n_layer = None
+        self.n_head = None
 
     def get_head_summary(self, tensors, n_head=32, name=''):
         norm_tensor = tools.torch_split_heads_and_normal(tensors[0], n_head)
@@ -27,26 +27,25 @@ class BloomCollector(ModuleCollector):
         self.gelu_sparsity = (sum(i) for i in zip(self.gelu_sparsity, gelu_sparsity))
 
     def get_hook(self, name: str):
-        assert self.n_layer is not None
+        assert self.n_head is not None
         super_hook = super().get_hook(name)
 
         def hook(module: torch.nn.Module, inputs: Tuple[Any], outputs):
             super_hook(module, inputs, outputs)
             if name.endswith('self_attention.dense'):
-                self.get_head_summary(inputs, self.n_layer, name)
+                self.get_head_summary(inputs, self.n_head, name)
             elif name.endswith('mlp.gelu_impl'):
                 self.get_gelu_summary(outputs, name)
 
         return hook
 
     def register_hook(self, model):
-        self.n_layer = model.config.n_layer
+        self.n_head = model.config.n_head
         super().register_hook(model)
 
 
 def main():
-    model_name = 'facebook/opt-13b'
-    collector = runtime.run_module(model_name, BloomCollector())
+    collector = runtime.run_module('bigscience/bloom-7b1', BloomCollector())
 
     print(
         f'overall gelu sparsity is {collector.gelu_sparsity[0] / collector.gelu_sparsity[1] :.2f} '

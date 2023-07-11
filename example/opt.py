@@ -46,9 +46,8 @@ class OptCollector(ModuleCollector):
 
 
 def main():
-    model_name = 'facebook/opt-13b'
+    collector = runtime.run_module('facebook/opt-13b', OptCollector())
     assert OPTForCausalLM
-    collector = runtime.run_module(model_name, OptCollector())
 
     print(
         f'overall gelu sparsity is {collector.gelu_sparsity[0] / collector.gelu_sparsity[1] :.2f} '
