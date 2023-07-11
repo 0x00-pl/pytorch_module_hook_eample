@@ -47,7 +47,7 @@ class ModuleCollector:
 
     @staticmethod
     def plt_grid(data, output_name, output_dir='output'):
-        plt.imshow(data.transpose(-1, -2), cmap='viridis')
+        plt.imshow(data, cmap='viridis')
         plt.colorbar()  # 添加颜色条
         plt.title(output_name)
         # plt.xticks(range(data.shape[-2]), [f'item{i}' for i in range(data.shape[-2])])

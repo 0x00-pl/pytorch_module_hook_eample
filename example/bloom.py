@@ -19,7 +19,7 @@ class BloomCollector(ModuleCollector):
         norm_tensor = tools.torch_split_heads_and_normal(tensors[0], n_head)
         attn_sparsity = self.plt_hist(norm_tensor, self.attn_sparsity_threshold, name, output_dir='output/bloom')
         self.attn_sparsity = tuple(sum(i) for i in zip(self.attn_sparsity, attn_sparsity))
-        self.plt_grid(norm_tensor[0], name, output_dir='output/bloom')
+        self.plt_grid(norm_tensor[0].transpose(), name, output_dir='output/bloom')
 
     def get_gelu_summary(self, tensor: torch.Tensor, name=''):
         assert isinstance(tensor, torch.Tensor)
