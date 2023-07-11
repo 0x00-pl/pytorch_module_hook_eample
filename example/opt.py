@@ -3,6 +3,7 @@ from typing import Any, Tuple
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BloomForCausalLM, BloomTokenizerFast
 
+from rotch_model_info_collector import runtime
 from rotch_model_info_collector.module_collector import ModuleCollector
 
 
@@ -36,42 +37,18 @@ class OptCollector(ModuleCollector):
         gelu_sparsity = self.plt_hist(tensor, self.gelu_sparsity_threshold, name)
         self.gelu_sparsity = (sum(i) for i in zip(self.gelu_sparsity, gelu_sparsity))
 
-    def tensor_info(self, tensor):
-        if isinstance(tensor, torch.Tensor):
-            return list(tensor.shape)
-        elif isinstance(tensor, tuple):
-            return tuple(self.tensor_info(i) for i in tensor)
-        elif isinstance(tensor, dict):
-            return {k: self.tensor_info(i) for k, i in tensor.items()}
-        else:
-            return '??'
-
     def get_hook(self, name: str):
         super_hook = super().get_hook(name)
 
         def hook(module: torch.nn.Module, inputs: Tuple[Any], outputs):
             super_hook(module, inputs, outputs)
-            if name.endswith('self_attention.dense'):
-                self.get_head_summary(inputs, 32, name)
-            elif name.endswith('mlp.gelu_impl'):
-                self.get_gelu_summary(outputs, name)
 
         return hook
 
 
 def main():
     model_name = 'facebook/opt-13b'
-    tokenizer: BloomTokenizerFast = AutoTokenizer.from_pretrained(model_name)
-    model: BloomForCausalLM = AutoModelForCausalLM.from_pretrained(model_name)
-    collector = OptCollector()
-    collector.register_hook(model)
-
-    text = "This fruit shipping company provide different vehicle options like car and"
-    inputs = tokenizer(text, return_tensors="pt")
-    outputs = model.generate(**inputs, labels=inputs["input_ids"], max_length=1)
-
-    output_text = tokenizer.decode(outputs[0], clean_up_tokenization_spaces=True, add_special_tokens=False)
-    print(output_text)
+    collector = runtime.run_module(model_name, OptCollector())
 
     print(
         f'overall gelu sparsity is {collector.gelu_sparsity[0] / collector.gelu_sparsity[1] :.2f} '
