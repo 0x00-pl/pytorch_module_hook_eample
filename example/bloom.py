@@ -1,7 +1,6 @@
 from typing import Any, Tuple
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BloomForCausalLM, BloomTokenizerFast
 
 from rotch_model_info_collector import runtime
 from rotch_model_info_collector.module_collector import ModuleCollector
@@ -14,6 +13,7 @@ class BloomCollector(ModuleCollector):
         self.gelu_sparsity = (0, 0)
         self.attn_sparsity_threshold = 0.05
         self.attn_sparsity = (0, 0)
+        self.n_layers = None
 
     def get_head_summary(self, tensors, n_head=32, name=''):
         tensor = tensors[0]
@@ -43,11 +43,15 @@ class BloomCollector(ModuleCollector):
         def hook(module: torch.nn.Module, inputs: Tuple[Any], outputs):
             super_hook(module, inputs, outputs)
             if name.endswith('self_attention.dense'):
-                self.get_head_summary(inputs, 32, name)
+                self.get_head_summary(inputs, self.n_layers, name)
             elif name.endswith('mlp.gelu_impl'):
                 self.get_gelu_summary(outputs, name)
 
         return hook
+
+    def register_hook(self, model):
+        self.n_layers = model.config.n_layers
+        super().register_hook(model)
 
 
 def main():
