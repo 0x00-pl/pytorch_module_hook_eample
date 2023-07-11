@@ -16,7 +16,7 @@ class OptCollector(ModuleCollector):
         self.attn_sparsity = (0, 0)
         self.num_attention_heads = None
 
-    def get_head_summary(self, tensor, n_head=32, name=''):
+    def get_head_summary(self, tensor, n_head=40, name=''):
         norm_tensor = tools.torch_split_heads_and_normal(tensor, n_head)
         self.plt_hist(tensor, self.attn_sparsity_threshold, name + '.raw', output_dir='output/opt')
         attn_sparsity = self.plt_hist(norm_tensor, self.attn_sparsity_threshold, name, output_dir='output/opt')
