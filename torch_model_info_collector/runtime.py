@@ -28,7 +28,7 @@ def run_module(model_name: str, collector=None):
     if collector is not None:
         collector.register_hook(model)
 
-    text = short_text()
+    text = long_text()
     inputs = tokenizer(text, return_tensors="pt")
     outputs = model.generate(**inputs, labels=inputs["input_ids"], max_length=1)
 
