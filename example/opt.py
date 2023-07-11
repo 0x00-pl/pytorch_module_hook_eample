@@ -16,9 +16,9 @@ class OptCollector(ModuleCollector):
         self.attn_sparsity = (0, 0)
         self.num_hidden_layers = None
 
-    def get_head_summary(self, tensors, n_head=32, name=''):
-        norm_tensor = tools.torch_split_heads_and_normal(tensors[0], n_head)
-        self.plt_hist(tensors[0], self.attn_sparsity_threshold, name + '.raw', output_dir='output/opt')
+    def get_head_summary(self, tensor, n_head=32, name=''):
+        norm_tensor = tools.torch_split_heads_and_normal(tensor, n_head)
+        self.plt_hist(tensor, self.attn_sparsity_threshold, name + '.raw', output_dir='output/opt')
         attn_sparsity = self.plt_hist(norm_tensor, self.attn_sparsity_threshold, name, output_dir='output/opt')
         self.attn_sparsity = tuple(sum(i) for i in zip(self.attn_sparsity, attn_sparsity))
         self.plt_grid(norm_tensor[0], name, output_dir='output/opt')
@@ -35,7 +35,7 @@ class OptCollector(ModuleCollector):
         def hook(module: torch.nn.Module, inputs: Tuple[Any], outputs):
             super_hook(module, inputs, outputs)
             if name.endswith('.self_attn.out_proj'):
-                self.get_head_summary(inputs, self.num_hidden_layers, name)
+                self.get_head_summary(inputs[0], self.num_hidden_layers, name)
             elif name.endswith('.self_attn.q_proj'):
                 self.get_head_summary(outputs, self.num_hidden_layers, name)
             elif name.endswith('.self_attn.k_proj'):
