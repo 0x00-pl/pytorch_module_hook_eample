@@ -10,11 +10,12 @@ from torch_model_info_collector.module_collector import ModuleCollector
 class OptCollector(ModuleCollector):
     def __init__(self):
         super().__init__()
-        self.gelu_sparsity_threshold = 0.001
-        self.gelu_sparsity = [0, 0]
+        self.fc_sparsity_threshold = 0.001
+        self.fc_sparsity = [0, 0]
         self.attn_sparsity_threshold = 0.1
         self.attn_sparsity = [0, 0]
         self.num_attention_heads = None
+        self.fc_grid = []
 
     def get_head_summary(self, tensor, n_head=None, name=''):
         if n_head is not None:
@@ -33,16 +34,18 @@ class OptCollector(ModuleCollector):
         # )
         self.attn_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.attn_sparsity, tensor_data_info)
 
-    def get_gelu_summary(self, tensor: torch.Tensor, name=''):
+    def get_fc_act_summary(self, tensor: torch.Tensor, name=''):
         assert isinstance(tensor, torch.Tensor)
         tensor_count = torch.sum(tensor != 0, dim=0)
 
-        tensor_data_info = self.tensor_data_info(tensor, name, self.gelu_sparsity_threshold)
+        tensor_data_info = self.tensor_data_info(tensor, name, self.fc_sparsity_threshold)
         self.plt_hist(
             tensor_count, name,
             title=tensor_data_info['fmt'], output_dir='output/opt'
         )
-        self.gelu_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.gelu_sparsity, tensor_data_info)
+        self.fc_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.fc_sparsity, tensor_data_info)
+
+        self.plt_grid(tensor, name, output_dir='output/opt')
 
     def get_hook(self, name: str):
         assert self.num_attention_heads is not None
@@ -59,7 +62,7 @@ class OptCollector(ModuleCollector):
             # elif name.endswith('.self_attn.v_proj'):
             #     self.get_head_summary(output, None, name)
             elif name.endswith('.activation_fn'):
-                self.get_gelu_summary(output, name)
+                self.get_fc_act_summary(output, name)
 
         return hook
 
@@ -73,8 +76,8 @@ def main():
     assert OPTForCausalLM
 
     print(
-        f'overall gelu sparsity is {collector.gelu_sparsity[0] / collector.gelu_sparsity[1] :.2f} '
-        f'== {collector.gelu_sparsity}'
+        f'overall fc sparsity is {collector.fc_sparsity[0] / collector.fc_sparsity[1] :.2f} '
+        f'== {collector.fc_sparsity}'
     )
     print(
         f'overall attn sparsity is {collector.attn_sparsity[0] / collector.attn_sparsity[1] :.2f} '

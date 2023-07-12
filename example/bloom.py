@@ -25,15 +25,15 @@ class BloomCollector(ModuleCollector):
         )
         self.attn_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.attn_sparsity, tensor_data_info)
 
-        self.plt_grid(norm_tensor[0].transpose(), name, output_dir='output/bloom')
+        self.plt_grid(norm_tensor[0].transpose(-1, -2), name, output_dir='output/bloom')
 
     def get_gelu_summary(self, tensor: torch.Tensor, name=''):
         assert isinstance(tensor, torch.Tensor)
         tensor_data_info = self.tensor_data_info(tensor, name, self.gelu_sparsity_threshold)
-        self.plt_hist(
-            tensor, name, title=self.tensor_data_info(tensor, name,
-                                                      self.gelu_sparsity_threshold), output_dir='output/bloom'
-        )
+        # self.plt_hist(
+        #     tensor, name, title=self.tensor_data_info(tensor, name,
+        #                                               self.gelu_sparsity_threshold), output_dir='output/bloom'
+        # )
         self.gelu_sparsity = self.update_attn_sparsity_from_tensor_data_info(self.gelu_sparsity, tensor_data_info)
 
     def get_hook(self, name: str):
