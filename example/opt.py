@@ -20,10 +20,10 @@ class OptCollector(ModuleCollector):
     def get_head_summary(self, tensor, n_head=None, name=''):
         if n_head is not None:
             tensor = tensor.reshape((-1, tensor.shape[1], n_head, tensor.shape[2] // n_head))
-            tensor_sum_in_pos = torch.sum(tensor.abs() > self.attn_sparsity_threshold, dim=-3)
+            tensor_sum_in_pos = torch.sum(tensor.abs() > self.attn_sparsity_threshold, dim=(1, 2))
             # tensor_trans = norm_tensor.transpose(-1, -2)
             # tensor_trans = tensor_trans.sum(dim=-1)
-            self.plt_grid(tensor_sum_in_pos[0], name, output_dir='output/opt')
+            self.plt_grid(tensor_sum_in_pos, name, output_dir='output/opt')
         else:
             name = name + '.raw'
 
@@ -71,7 +71,7 @@ class OptCollector(ModuleCollector):
         super().register_hook(model)
 
 
-def main():
+def run_example():
     collector = runtime.run_module('facebook/opt-13b', OptCollector())
     assert OPTForCausalLM
 
@@ -85,5 +85,19 @@ def main():
     )
 
 
+def run_dataset():
+    collector = runtime.run_module_dataset('facebook/opt-13b', OptCollector(), ('wikitext', 'wikitext-2-raw-v1', 'test'))
+    assert OPTForCausalLM
+
+    print(
+        f'overall fc sparsity is {collector.fc_sparsity[0] / collector.fc_sparsity[1] :.2f} '
+        f'== {collector.fc_sparsity}'
+    )
+    print(
+        f'overall attn sparsity is {collector.attn_sparsity[0] / collector.attn_sparsity[1] :.2f} '
+        f'== {collector.attn_sparsity}'
+    )
+
+
 if __name__ == '__main__':
-    main()
+    run_dataset()

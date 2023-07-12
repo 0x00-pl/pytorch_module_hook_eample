@@ -41,7 +41,7 @@ class ModuleCollector:
             'count': num_small_value,
             'total': num_total,
             'fmt': f'{output_name} < {threshold}: '
-                   f'{num_small_value} / {num_total} == {num_small_value / num_total :.2f}'
+                   f'{num_small_value / num_total :.2f} == {num_small_value}/{num_total}'
         }
 
     @staticmethod

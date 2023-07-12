@@ -1,4 +1,7 @@
+import torch.utils.data
+from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from datasets import load_dataset
 
 
 def short_text():
@@ -50,19 +53,55 @@ def long_text_2048():
         "Even in the modern era, whispers of Merlin\'s return circulated among those attuned to the mystical undercurrents of the world. Many believed that when darkness threatened to overshadow the light, the spirit of Merlin would manifest itself in a chosen champion. This fabled figure, the \'Once and Future Merlin,\' was said to possess the combined might of all the previous Merlins and would rise to defend the world in its darkest hour."\
         "While skeptics dismissed these tales as mere fantasy, there were those who clung to the hope that Camelot would one day be reborn. They believed that the values embodied by Merlin and his knights—courage, justice, and compassion—were timeless and could guide humanity towards a brighter future."\
         "And so, the legend of Merlin, his knights, and the realm of Camelot remained alive, carried forward through the tapestry of time. Whether as a source of inspiration, a moral compass, or a symbol of the enduring power of good, their story continued to remind people that even in the face of adversity, heroism could be found within each individual, waiting to be awakened."\
-        "As the sun set on another day, casting long shadows across the land, the legacy of Camelot whispered on the wind, reminding all who listened that the spirit of Arthur, Merlin, and the Knights of the Round Table would forever dwell in the hearts of those who dared to dream of a better world."\
+        "As the sun set on another day, casting long shadows across the land, the legacy of Camelot whispered on the wind, reminding all who listened that the spirit of Arthur, Merlin, and the Knights of the Round Table would forever dwell in the hearts of those who dared to dream of a better world."
 
 
-def run_module(model_name: str, collector=None):
+def run_module(model_name: str, collector=None, text=None):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
     if collector is not None:
         collector.register_hook(model)
 
-    text = long_text_2048()
+    if text is None:
+        text = long_text_2048()
     inputs = tokenizer(text, return_tensors="pt")
     outputs = model.generate(**inputs, labels=inputs["input_ids"], max_length=1)
 
     output_text = tokenizer.decode(outputs[0], clean_up_tokenization_spaces=True, add_special_tokens=False)
     print(output_text)
+    return collector
+
+
+class CustomDataset(torch.utils.data.Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def __getitem__(self, index):
+        example = self.dataset[index]
+        return example["input"]
+
+    def __len__(self):
+        return len(self.dataset)
+
+
+def run_module_dataset(model_name: str, collector=None, dataset_name_subset_split=None, batch_size=16):
+    dataset_name, dataset_subset, dataset_split = dataset_name_subset_split
+    dataset = load_dataset(dataset_name, dataset_subset, split=dataset_split)
+    dataset = dataset.filter(lambda x: len(x['text']) > 100).map(lambda x: {'text': x['text'][:2048]})
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    if collector is not None:
+        collector.register_hook(model)
+
+    for idx, batch in enumerate(dataloader):
+        if idx > 0:
+            break
+        inputs = tokenizer(batch['text'], return_tensors="pt", padding=True)
+        outputs = model.generate(**inputs, labels=inputs["input_ids"], max_length=1)
+        _ = outputs
+        # output_text = tokenizer.decode(outputs[0], clean_up_tokenization_spaces=True, add_special_tokens=False)
+        # print(output_text)
+
     return collector
